@@ -1,0 +1,11 @@
+Manifest-Version: 1.0
+Main-Class: pl.jill.webmsn.Main
+Class-Path: circe-numbers_2.13-0.14.1.jar log4j-api-scala_2.13-12.0.jar 
+ log4j-api-2.18.0.jar cats-core_2.13-2.6.1.jar jawn-parser_2.13-1.1.2.ja
+ r shapeless_2.13-2.3.7.jar commons-logging-1.1.3.jar circe-generic_2.13
+ -0.14.1.jar scala-library-2.13.8.jar circe-core_2.13-0.14.1.jar circe-j
+ awn_2.13-0.14.1.jar cats-kernel_2.13-2.6.1.jar scala-reflect-2.13.8.jar
+  log4j-core-2.18.0.jar simulacrum-scalafix-annotations_2.13-0.5.4.jar c
+ irce-parser_2.13-0.14.1.jar cindy.jar jml-1.0.4-SNAPSHOT.jar httpcore-4
+ .0.1.jar
+
