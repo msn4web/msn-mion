@@ -27,7 +27,7 @@ class ClientWatchDogTask(colle: ClientsCollection) extends Runnable with Logging
     
     override def run(): Unit = {
         while(true) {
-            logger.debug(s"Searching for dead or inactive clients to destroy")
+            logger.trace(s"Searching for dead or inactive clients to destroy")
             
             hunt()
             Thread.sleep(60 * 1000)
