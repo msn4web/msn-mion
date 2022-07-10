@@ -2,14 +2,14 @@ package pl.jill.webmsn.WebApi.Handlers
 
 import com.sun.net.httpserver.{HttpExchange, HttpHandler}
 import io.circe.{Json, JsonObject}
+import org.apache.logging.log4j.scala.Logging
 import pl.jill.webmsn.GatewayService.ClientsCollection
 import pl.jill.webmsn.MSN.BoundMessengerClient
 import pl.jill.webmsn.Util.StreamingJSONReader
 import pl.jill.webmsn.WebApi.ClientAuthenticator
+import java.io.{IOException, InputStream, OutputStream}
 
-import java.io.{InputStream, OutputStream}
-
-abstract class AbstractHandler(colle: ClientsCollection) extends HttpHandler {
+abstract class AbstractHandler(colle: ClientsCollection) extends HttpHandler with Logging {
     protected val collection: ClientsCollection = colle
     protected var client: Option[BoundMessengerClient] = None
     protected var params: Option[Map[String, Json]] = None
@@ -65,16 +65,34 @@ abstract class AbstractHandler(colle: ClientsCollection) extends HttpHandler {
     def run(exchange: HttpExchange): Unit;
     
     override def handle(exchange: HttpExchange): Unit = {
-        val origin: String = exchange.getRequestHeaders.get("Origin").get(0)
-        exchange.getResponseHeaders.set("Access-Control-Allow-Origin", origin)
-        
-        if(exchange.getRequestMethod == "OPTIONS") {
-            handlePreflight(exchange)
-            return
+        try {
+            val origin: String = exchange.getRequestHeaders.get("Origin").get(0)
+            exchange.getResponseHeaders.set("Access-Control-Allow-Origin", origin)
+    
+            if (exchange.getRequestMethod == "OPTIONS") {
+                handlePreflight(exchange)
+                return
+            }
+    
+            initParams(exchange)
+            initClient(exchange)
+            run(exchange)
+        } catch {
+            case ex: Throwable => {
+                if(ex.isInstanceOf[IOException]) {
+                    logger.debug(s"${client.get.email} got disconnected")
+                    return
+                }
+                
+                logger.error(s"${ex.getClass.getName} caught: ${ex.getMessage}: ");
+                ex.printStackTrace()
+                
+                val error: Array[Byte] = s"500 Exception ${ex.getClass.getName}: ${ex.getMessage}".getBytes("US-ASCII")
+                exchange.sendResponseHeaders(500, error.length)
+                exchange.getResponseBody.write(error)
+                exchange.getResponseBody.flush()
+                exchange.getResponseBody.close()
+            }
         }
-        
-        initParams(exchange)
-        initClient(exchange)
-        run(exchange)
     }
 }
