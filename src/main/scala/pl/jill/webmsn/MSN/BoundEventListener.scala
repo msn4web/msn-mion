@@ -28,6 +28,7 @@ class BoundEventListener(boundMessengerClient: BoundMessengerClient) extends Msn
     
     override def loginCompleted(messenger: MsnMessenger): Unit = {
         logger.trace(s"Login succeeded for ${client.email}")
+        client.markAsAlive()
         // not sending ClientReady here, waiting for contact list to initialize
     }
     
@@ -55,10 +56,9 @@ class BoundEventListener(boundMessengerClient: BoundMessengerClient) extends Msn
     
     override def contactListInitCompleted(messenger: MsnMessenger): Unit = {
         client.enqueueEvent(new ClientReadyEvent)
-        client.markAsAlive()
     }
     
     override def contactListSyncCompleted(messenger: MsnMessenger): Unit = {
-        logger.debug("cum sync")
+        //logger.debug("cum sync")
     }
 }
