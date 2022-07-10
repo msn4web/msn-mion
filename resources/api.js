@@ -121,7 +121,10 @@ class MsnClient {
 
                 this._emitEvent(update["@type"].toLowerCase(), update.data);
             });
-        } catch(e) {}
+        } catch(e) {
+            console.error("Error getting updates :(");
+            this.state = MsnClientState.DEAD;
+        }
 
         if(this.state === MsnClientState.READY)
             this._longPooler();
@@ -147,18 +150,27 @@ class MsnClient {
         this.state = MsnClientState.LOGGING_IN;
         this.key   = btoa(username + ":" + auth.key);
 
-        let events = await this.request("getUpdates");
-        events.updates.forEach(update => {
-            if(update["@type"] === "UNAUTHORIZED") {
-                this.state = MsnClientState.LOGIN_FAILED;
-                this._emitEvent("loginFailed", {});
-                throw new MsnApiException("Invalid username/password");
-            } else if(update["@type"] === "READY") {
-                this.state = MsnClientState.READY;
-                this._emitEvent("clientReady", {});
-                console.debug("Logged in as ", username);
-            }
-        });
+        let startTime = Date.now();
+        while(Date.now() - startTime < 10000 && this.state == MsnClientState.LOGGING_IN) {
+            let events = await this.request("getUpdates");
+            events.updates.forEach(update => {
+                switch(update["@type"]) {
+                    case "UNAUTHORIZED":
+                        this.state = MsnClientState.LOGIN_FAILED;
+                        this._emitEvent("loginFailed", {});
+                        throw new MsnApiException("Invalid username/password");
+
+                    case "READY":
+                        this.state = MsnClientState.READY;
+                        this._emitEvent("clientReady", {});
+                        console.debug("Logged in as ", username);
+                        break;
+
+                    default:
+                        this._emitEvent(update["@type"].toLowerCase(), update.data);
+                }
+            });
+        }
 
         if(this.state === MsnClientState.LOGGING_IN) {
             console.error("Could not receive auth confirmation within a reasonable amount of time.");
