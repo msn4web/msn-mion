@@ -110,7 +110,17 @@ class MsnClient {
     async _longPooler() {
         try {
             let events = await this.request("getUpdates");
-            events.updates.forEach(update => this._emitEvent(update["@type"].toLowerCase(), update.data));
+            events.updates.forEach(update => {
+                let type = update["@type"].toLowerCase();
+                if(type === "internal" && update.data.ptr === 101) {
+                    console.error("Another instance of client seems to be active, shutting down...");
+                    this.state = MsnClientState.NONE;
+
+                    return;
+                }
+
+                this._emitEvent(update["@type"].toLowerCase(), update.data);
+            });
         } catch(e) {}
 
         if(this.state === MsnClientState.READY)
