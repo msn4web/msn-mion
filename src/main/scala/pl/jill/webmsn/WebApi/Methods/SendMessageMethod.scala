@@ -13,7 +13,21 @@ class SendMessageMethod(mess: BoundMessengerClient, params: Map[String, Json]) e
         if(email == null)
             throw new MethodException("Invalid email format")
         
-        client.client.sendText(email, params("text").asString.getOrElse("[client sent a message WebMSN proxy couldn't parse]"))
+        try {
+            client.client.sendText(email, params("text").asString.getOrElse("[client sent a message WebMSN proxy couldn't parse]"))
+        } catch {
+            case ex: NullPointerException => {
+                // Ugly hack, but better than cryptic error message
+                // (SSO is required for offline messages)
+                if(ex.getMessage.contains("this.sso")) {
+                    throw new MethodException("Contact is offline")
+                }
+                
+                throw ex
+            }
+
+            case ex: Throwable => throw ex
+        }
         
         return Json.obj()
     }
